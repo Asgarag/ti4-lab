@@ -1,13 +1,10 @@
+import { ActionIcon, Box, Button, Group, Stack, Text } from "@mantine/core";
 import {
-  ActionIcon,
-  Box,
-  Button,
-  Grid,
-  Group,
-  Stack,
-  Text,
-} from "@mantine/core";
-import { LoaderFunctionArgs, useLoaderData, useNavigate } from "react-router";
+  LoaderFunctionArgs,
+  MetaFunction,
+  useLoaderData,
+  useNavigate,
+} from "react-router";
 import {
   presetMapBySlug,
   incrementPresetMapViews,
@@ -141,6 +138,44 @@ export const loader = async ({ params, request }: LoaderFunctionArgs) => {
   };
 };
 
+type LoaderData = {
+  preset: {
+    id: string;
+    slug: string;
+    name: string;
+    description: string;
+    author: string;
+  };
+};
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => {
+  const typed = data as LoaderData | undefined;
+  if (!typed) return [];
+
+  const { preset } = typed;
+  const title = `${preset.name} - TI4 Lab`;
+  const description = preset.description
+    ? `${preset.description} — by ${preset.author}`
+    : `Map by ${preset.author}`;
+  const imageUrl = `https://tidraft.com/map-preset/${preset.id}.png`;
+  const url = `https://tidraft.com/maps/${preset.slug}`;
+
+  return [
+    { title },
+    { name: "description", content: description },
+    { property: "og:title", content: title },
+    { property: "og:description", content: description },
+    { property: "og:image", content: imageUrl },
+    { property: "og:url", content: url },
+    { property: "og:type", content: "website" },
+    { property: "og:site_name", content: "TI4 Lab" },
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: title },
+    { name: "twitter:description", content: description },
+    { name: "twitter:image", content: imageUrl },
+  ];
+};
+
 export default function MapDetail() {
   const { preset, ip } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
@@ -240,8 +275,8 @@ export default function MapDetail() {
   return (
     <MainAppShell>
       <Box className={classes.page}>
-        <Grid gutter="xl">
-          <Grid.Col span={{ base: 12, md: 8 }} order={{ base: 2, md: 1 }}>
+        <div className={classes.grid}>
+          <div className={classes.mapColumn}>
             <Box className={classes.mapContainer}>
               <Map
                 id="map-detail"
@@ -255,8 +290,8 @@ export default function MapDetail() {
                 tileContributions={tileContributions}
               />
             </Box>
-          </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 4 }} order={{ base: 1, md: 2 }}>
+          </div>
+          <div className={classes.sidebarColumn}>
             <Stack gap="lg">
               <Button
                 variant="subtle"
@@ -375,8 +410,8 @@ export default function MapDetail() {
                 </Button>
               </Stack>
             </Stack>
-          </Grid.Col>
-        </Grid>
+          </div>
+        </div>
       </Box>
     </MainAppShell>
   );

@@ -2,6 +2,34 @@
   padding: var(--mantine-spacing-xl) 0;
 }
 
+.grid {
+  display: grid;
+  gap: var(--mantine-spacing-xl);
+  grid-template-columns: 1fr;
+}
+
+.mapColumn {
+  order: 2;
+}
+
+.sidebarColumn {
+  order: 1;
+}
+
+@media (min-width: 62em) {
+  .grid {
+    grid-template-columns: 2fr 1fr;
+  }
+
+  .mapColumn {
+    order: 1;
+  }
+
+  .sidebarColumn {
+    order: 2;
+  }
+}
+
 .backButton {
   align-self: flex-start;
 }

@@ -18,6 +18,7 @@ import type { CoreSliceData } from "~/hooks/useCoreSliceValues";
 import type { SliceValueBreakdown } from "~/hooks/useSliceValueBreakdown";
 import type { TileContribution, SliceStats } from "~/mapgen/utils/sliceScoring";
 import { ContributionBadge } from "./tiles/ContributionBadge";
+import { getSafeWindow } from "~/hooks/useWindowDimensions";
 
 type Props = {
   mapId: string;
@@ -348,5 +349,10 @@ function AbstractArtMapTile(props: Props) {
 }
 
 function isTouchDevice() {
-  return "ontouchstart" in window || navigator.maxTouchPoints > 0;
+  const safeWindow = getSafeWindow();
+  if (!safeWindow) return false;
+  return (
+    "ontouchstart" in safeWindow ||
+    (safeWindow.navigator?.maxTouchPoints ?? 0) > 0
+  );
 }
