@@ -109,18 +109,20 @@ export const useMapBuilder = create<MapBuilderStore>((set, get) => {
 
           if (!system) return store;
 
-          // Remove any existing instance of this system from the map
-          for (let i = 0; i < newMap.length; i++) {
-            const tile = newMap[i];
-            if (
-              tile.type === "SYSTEM" &&
-              tile.systemId === systemId &&
-              i !== 0 // Never remove Mecatol Rex
-            ) {
-              newMap[i] = {
-                ...tile,
-                type: "OPEN",
-              };
+          if (system.type !== "HYPERLANE") {
+            // Remove any existing instance of this system from the map
+            for (let i = 0; i < newMap.length; i++) {
+              const tile = newMap[i];
+              if (
+                tile.type === "SYSTEM" &&
+                tile.systemId === systemId &&
+                i !== 0 // Never remove Mecatol Rex
+              ) {
+                newMap[i] = {
+                  ...tile,
+                  type: "OPEN",
+                };
+              }
             }
           }
 

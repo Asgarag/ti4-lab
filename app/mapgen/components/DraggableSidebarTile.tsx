@@ -1,22 +1,23 @@
-import { Box, Card, alpha } from "@mantine/core";
+import { Box, Card, Text, alpha } from "@mantine/core";
 import { useDraggable } from "@dnd-kit/core";
 import { RawSystemTile } from "~/components/tiles/SystemTile";
 import { systemData } from "~/data/systemData";
 
 type Props = {
   systemId: string;
+  rotation?: number;
   selected?: boolean;
   onSelect?: (systemId: string) => void;
 };
 
-export function DraggableSidebarTile({ systemId, selected = false, onSelect }: Props) {
+export function DraggableSidebarTile({ systemId, rotation, selected = false, onSelect }: Props) {
   const tileRadius = 60;
   const tileWidth = tileRadius * 2;
   const tileHeight = tileRadius * 2;
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `sidebar-${systemId}`,
-    data: { systemId },
+    id: `sidebar-${systemId}-${rotation ?? 0}`,
+    data: { systemId, rotation },
   });
 
   const system = systemData[systemId];
@@ -59,12 +60,18 @@ export function DraggableSidebarTile({ systemId, selected = false, onSelect }: P
             idx: 0,
             type: "SYSTEM",
             systemId: systemId,
+            rotation,
             position: { x: 0, y: 0 },
           }}
           radius={tileRadius}
           disablePopover={true}
         />
       </Box>
+      {rotation !== undefined && (
+        <Text size="xs" c="dimmed" ta="center" mt={6}>
+          Rotation {rotation}°
+        </Text>
+      )}
     </Card>
   );
 }

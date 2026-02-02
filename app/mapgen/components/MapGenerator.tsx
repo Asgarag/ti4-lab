@@ -10,6 +10,7 @@ import {
   MultiSelect,
   TextInput,
   Textarea,
+  Alert,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
@@ -123,6 +124,17 @@ function MapGeneratorContent() {
     () => calculateBalanceGap(sliceValues),
     [sliceValues],
   );
+
+  const duplicateHyperlanes = useMemo(() => {
+    const counts = new globalThis.Map<string, number>();
+    map.forEach((tile) => {
+      if (tile.type !== "SYSTEM") return;
+      const system = systemData[tile.systemId];
+      if (system?.type !== "HYPERLANE") return;
+      counts.set(tile.systemId, (counts.get(tile.systemId) ?? 0) + 1);
+    });
+    return Array.from(counts.entries()).filter(([, count]) => count > 1);
+  }, [map]);
 
   const [infoOpened, { open: openInfo, close: closeInfo }] =
     useDisclosure(false);
@@ -487,6 +499,9 @@ function MapGeneratorContent() {
   };
 
   const [activeSystemId, setActiveSystemId] = useState<string | null>(null);
+  const [activeSystemRotation, setActiveSystemRotation] = useState<number | undefined>(
+    undefined,
+  );
 
   // Parse URL parameters and seed map on page load
   useEffect(() => {
@@ -509,12 +524,15 @@ function MapGeneratorContent() {
     const activeId = event.active.id as string;
     if (activeId.startsWith("sidebar-")) {
       const systemId = event.active.data.current?.systemId;
+      const rotation = event.active.data.current?.rotation;
       setActiveSystemId(systemId || null);
+      setActiveSystemRotation(rotation);
     }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     setActiveSystemId(null);
+    setActiveSystemRotation(undefined);
 
     if (!event.over) return;
 
@@ -525,6 +543,7 @@ function MapGeneratorContent() {
     // Sidebar to map drag
     if (activeId.startsWith("sidebar-")) {
       const systemId = event.active.data.current?.systemId;
+      const rotation = event.active.data.current?.rotation;
       if (!systemId || !destTile) return;
 
       // Sidebar tiles can drop on OPEN, SYSTEM, or HOME tiles
@@ -536,7 +555,7 @@ function MapGeneratorContent() {
         return;
       if (destTile.type === "SYSTEM" && destTile.systemId === "18") return;
 
-      addSystemToMap(destTile.idx, systemId);
+      addSystemToMap(destTile.idx, systemId, rotation);
       return;
     }
 
@@ -635,6 +654,20 @@ function MapGeneratorContent() {
         onDragEnd={handleDragEnd}
         sensors={sensors}
       >
+        {duplicateHyperlanes.length > 0 && (
+          <Box
+            pos="fixed"
+            bottom={12}
+            right={12}
+            style={{ zIndex: 2000, maxWidth: 320 }}
+          >
+            <Alert color="yellow" variant="light" radius="md">
+              <Text size="xs">
+                Duplicate hyperlanes detected. Physical maps may be limited to one copy per tile.
+              </Text>
+            </Alert>
+          </Box>
+        )}
         <AppShell
           navbar={{
             width: 250,
@@ -802,6 +835,7 @@ function MapGeneratorContent() {
                 idx: 0,
                 type: "SYSTEM",
                 systemId: activeSystemId,
+                rotation: activeSystemRotation,
                 position: { x: 0, y: 0 },
               }}
               radius={tileRadius}
