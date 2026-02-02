@@ -28,6 +28,7 @@ async function migrateState() {
   console.log(`Deleted ${deletedCount} drafts total`);
 }
 
+
 (async () => {
   await migrateState();
   console.log("done");

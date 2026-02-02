@@ -1382,6 +1382,10 @@ export default function VoicesMaster() {
           <div className={styles.creditsSubtitle}>Voice Performances</div>
           <div className={styles.creditsList}>
             <div className={styles.creditRow}>
+              <a href="https://jezsands.wixsite.com/profile/voiceover-artist" target="_blank" rel="noreferrer" className={styles.creditNameLink}>Jez Sands</a>
+              <span className={styles.creditRole}>Announcer voice</span>
+            </div>
+            <div className={styles.creditRow}>
               <a href="https://www.jennasharpe.com/" target="_blank" rel="noreferrer" className={styles.creditNameLink}>Jenna Sharpe</a>
               <span className={styles.creditRole}>Mentak, Argent Flight, Naalu, Ghosts of Creuss</span>
             </div>
