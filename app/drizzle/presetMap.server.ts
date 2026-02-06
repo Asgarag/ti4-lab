@@ -142,7 +142,7 @@ export async function listPresetMaps(): Promise<PresetMapRecord[]> {
   return (await db
     .select()
     .from(presetMaps)
-    .orderBy(desc(presetMaps.createdAt))) as PresetMapRecord[];
+    .orderBy(desc(presetMaps.views), desc(presetMaps.createdAt))) as PresetMapRecord[];
 }
 
 export async function presetMapById(
