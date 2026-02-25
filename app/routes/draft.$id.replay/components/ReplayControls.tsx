@@ -8,6 +8,15 @@ import {
 import { useDraft } from "~/draftStore";
 import { useHydratedDraft } from "~/hooks/useHydratedDraft";
 import { factions } from "~/data/factionData";
+import { DraftSelection, Player } from "~/types";
+
+function getSelectionPlayer(
+  selection: DraftSelection,
+  players: Player[],
+): Player | undefined {
+  if (!("playerId" in selection)) return undefined;
+  return players.find((p) => p.id === selection.playerId);
+}
 
 export function ReplayControls() {
   const replaySelections = useDraft((state) => state.replaySelections);
@@ -29,7 +38,7 @@ export function ReplayControls() {
     if (!replaySelections) return "Loading...";
 
     const selection = replaySelections[currentPick - 1];
-    const player = draft.players.find((p) => p.id === selection.playerId);
+    const player = getSelectionPlayer(selection, draft.players);
 
     switch (selection.type) {
       case "SELECT_FACTION": {

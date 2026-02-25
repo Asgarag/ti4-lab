@@ -29,6 +29,7 @@ export function BanPhase() {
 
   const { currentlyPicking, hydratedPlayers, activePlayer } =
     useHydratedDraft();
+  const canSelect = currentlyPicking && !!activePlayer;
 
   return (
     <>
@@ -61,7 +62,7 @@ export function BanPhase() {
                   selectTitle={"Ban"}
                   faction={allFactions[factionId]}
                   onSelect={
-                    currentlyPicking && !player
+                    canSelect && !player
                       ? () => {
                           if (
                             confirm(

@@ -5,6 +5,23 @@ import { useSocket } from "~/socketContext";
 import { notifications } from "@mantine/notifications";
 import { FactionId, PlayerId, SimultaneousPickType } from "~/types";
 
+type UndoResult = { success: boolean; removedSelection?: unknown };
+
+type SyncDraftContextValue = {
+  syncDraft: () => Promise<void>;
+  stagePriorityValue: (_: PlayerId, __: FactionId) => Promise<void>;
+  stageHomeSystem: (_: PlayerId, __: FactionId) => Promise<void>;
+  stageSimultaneousPick: (
+    _: SimultaneousPickType,
+    __: PlayerId,
+    ___: string,
+  ) => Promise<void>;
+  undoStagedPick: (_: SimultaneousPickType, __: PlayerId) => Promise<UndoResult>;
+  undoSimultaneousPhase: (_: SimultaneousPickType) => Promise<UndoResult>;
+  undoLastPick: () => Promise<UndoResult>;
+  syncing: boolean;
+};
+
 export function useSyncDraft() {
   const {
     syncDraft,
@@ -273,8 +290,8 @@ export function useSyncDraftFetcher() {
   };
 }
 
-export const SyncDraftContext = createContext({
-  syncDraft: () => {},
+export const SyncDraftContext = createContext<SyncDraftContextValue>({
+  syncDraft: async () => {},
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   stagePriorityValue: async (_: PlayerId, __: FactionId) => {},
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -286,9 +303,13 @@ export const SyncDraftContext = createContext({
     ___: string,
   ) => {},
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  undoStagedPick: async (_: SimultaneousPickType, __: PlayerId) => {},
+  undoStagedPick: async (_: SimultaneousPickType, __: PlayerId) => ({
+    success: false,
+  }),
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  undoSimultaneousPhase: async (_: SimultaneousPickType) => {},
-  undoLastPick: async () => ({ success: false } as { success: boolean; removedSelection?: unknown }),
+  undoSimultaneousPhase: async (_: SimultaneousPickType) => ({
+    success: false,
+  }),
+  undoLastPick: async () => ({ success: false }),
   syncing: false,
 });

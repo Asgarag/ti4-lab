@@ -1,4 +1,4 @@
-import { desc, eq, sql } from "drizzle-orm";
+import { desc, eq, sql, type SQL } from "drizzle-orm";
 import { db } from "./config.server";
 import { drafts, draftStagedSelections } from "./schema.server";
 import { generatePrettyUrlName } from "~/data/urlWords.server";
@@ -17,7 +17,9 @@ export async function draftById(id: string) {
 }
 
 function stripEphemeralDraftFields(draft: Draft): Draft {
-  const { stagedSelections, ...persistable } = draft;
+  const persistable = { ...draft };
+  delete (persistable as { stagedSelections?: Draft["stagedSelections"] })
+    .stagedSelections;
   return persistable;
 }
 
@@ -31,13 +33,37 @@ type SavedDraft = {
   incompleteImageUrl: string | null;
   createdAt: string;
   updatedAt: string;
+  mode: DraftMode;
+  phase: DraftPhase;
+  selectionsCount: number;
+  pickOrderCount: number;
+  progressPercent: number;
+  playerCount: number;
+  playerNames: string;
 };
 
+export type DraftMode = "base" | "twilightsFall" | "texasStyle" | "presetMap";
+export type DraftPhase =
+  | "ban"
+  | "priorityValue"
+  | "homeSystem"
+  | "texasFaction"
+  | "texasBlueKeep1"
+  | "texasBlueKeep2"
+  | "texasRedKeep"
+  | "texasMapBuild"
+  | "standardPick"
+  | "complete";
+
 export type DraftStats = {
-  totalDrafts: number;
+  allDrafts: number;
+  scopedDrafts: number;
+  filteredDrafts: number;
   completedDrafts: number;
   completionPercent: number;
   draftsByType: Record<string, number>;
+  draftsByMode: Record<string, number>;
+  draftsByPhase: Record<string, number>;
 };
 
 function normalizeDraftType(type: string | null): string {
@@ -60,19 +86,93 @@ export type PaginatedDrafts = {
   drafts: SavedDraft[];
   totalPages: number;
   currentPage: number;
+  filteredTotal: number;
   stats: DraftStats;
 };
 
 type FindDraftsParams = {
   page?: number;
   pageSize?: number;
-  sortBy?: "createdAt" | "updatedAt" | "type" | "isComplete";
+  sortBy?:
+    | "createdAt"
+    | "updatedAt"
+    | "type"
+    | "isComplete"
+    | "mode"
+    | "phase"
+    | "progress"
+    | "players";
   sortOrder?: "asc" | "desc";
   typeFilter?: string;
+  modeFilter?: DraftMode;
+  phaseFilter?: DraftPhase;
   isCompleteFilter?: boolean;
+  search?: string;
   createdAfter?: string;
   createdBefore?: string;
+  updatedAfter?: string;
+  updatedBefore?: string;
 };
+
+const draftModeExpr = sql<string>`coalesce(json_extract(${drafts.data}, '$.settings.draftGameMode'), 'base')`;
+const selectionsCountExpr = sql<number>`coalesce(json_array_length(json_extract(${drafts.data}, '$.selections')), 0)`;
+const pickOrderCountExpr = sql<number>`coalesce(json_array_length(json_extract(${drafts.data}, '$.pickOrder')), 0)`;
+const playersCountExpr = sql<number>`coalesce(json_array_length(json_extract(${drafts.data}, '$.players')), 0)`;
+const currentPickExpr = sql`json_extract(${drafts.data}, '$.pickOrder[' || ${selectionsCountExpr} || ']')`;
+const currentPickTypeExpr = sql<string>`json_type(${currentPickExpr})`;
+const currentPhaseExpr = sql<string>`json_extract(${drafts.data}, '$.pickOrder[' || ${selectionsCountExpr} || '].phase')`;
+const banPerPlayerExpr = sql<number>`coalesce(json_extract(${drafts.data}, '$.settings.modifiers.banFactions.numFactions'), 0)`;
+const banNeededExpr = sql<number>`${banPerPlayerExpr} * ${playersCountExpr}`;
+const progressPercentExpr = sql<number>`
+  case
+    when ${pickOrderCountExpr} > 0 then (100.0 * ${selectionsCountExpr} / ${pickOrderCountExpr})
+    else 0
+  end
+`;
+const draftPhaseExpr = sql<string>`
+  case
+    when ${drafts.isComplete} = 1 then 'complete'
+    when ${banPerPlayerExpr} > 0 and ${selectionsCountExpr} < ${banNeededExpr} then 'ban'
+    when ${currentPickTypeExpr} = 'object' then coalesce(${currentPhaseExpr}, 'standardPick')
+    when ${draftModeExpr} = 'texasStyle' then 'texasMapBuild'
+    else 'standardPick'
+  end
+`;
+
+function buildTypeFilterCondition(typeFilter: string): SQL {
+  if (typeFilter === "milty") {
+    return sql`${drafts.type} like ${"milty%"} and ${drafts.type} not like ${"miltyeq%"}`;
+  }
+  if (typeFilter === "miltyeq") {
+    return sql`${drafts.type} like ${"miltyeq%"}`;
+  }
+  if (typeFilter === "unknown") {
+    return sql`${drafts.type} is null`;
+  }
+
+  return eq(drafts.type, typeFilter);
+}
+
+function deriveDraftMode(draft: Draft): DraftMode {
+  return draft.settings.draftGameMode ?? "base";
+}
+
+function deriveDraftPhase(draft: Draft, isComplete: boolean): DraftPhase {
+  if (isComplete) return "complete";
+
+  const currentPickNumber = draft.selections?.length ?? 0;
+  const banModifier = draft.settings.modifiers?.banFactions;
+  const totalBansNeeded = (banModifier?.numFactions ?? 0) * draft.players.length;
+  if (banModifier && currentPickNumber < totalBansNeeded) return "ban";
+
+  const currentPick = draft.pickOrder?.[currentPickNumber];
+  if (typeof currentPick === "object" && currentPick?.kind === "simultaneous") {
+    return currentPick.phase;
+  }
+
+  if (deriveDraftMode(draft) === "texasStyle") return "texasMapBuild";
+  return "standardPick";
+}
 
 export async function findDrafts({
   page = 1,
@@ -80,28 +180,56 @@ export async function findDrafts({
   sortBy = "createdAt",
   sortOrder = "desc",
   typeFilter,
+  modeFilter,
+  phaseFilter,
   isCompleteFilter,
+  search,
   createdAfter,
   createdBefore,
+  updatedAfter,
+  updatedBefore,
 }: FindDraftsParams = {}): Promise<PaginatedDrafts> {
   const offset = (page - 1) * pageSize;
+  const scopedConditions: SQL[] = [];
+  const allConditions: SQL[] = [];
 
-  // Build where conditions
-  const conditions = [];
   if (typeFilter) {
-    conditions.push(eq(drafts.type, typeFilter));
+    scopedConditions.push(buildTypeFilterCondition(typeFilter));
   }
-  if (isCompleteFilter !== undefined) {
-    conditions.push(eq(drafts.isComplete, isCompleteFilter));
+  if (modeFilter) {
+    scopedConditions.push(sql`${draftModeExpr} = ${modeFilter}`);
+  }
+  if (search?.trim()) {
+    const searchLike = `%${search.trim().toLowerCase()}%`;
+    scopedConditions.push(
+      sql`(
+        lower(${drafts.id}) like ${searchLike}
+        or lower(coalesce(${drafts.urlName}, '')) like ${searchLike}
+        or lower(cast(${drafts.data} as text)) like ${searchLike}
+      )`,
+    );
   }
   if (createdAfter) {
-    conditions.push(sql`${drafts.createdAt} >= ${createdAfter}`);
+    scopedConditions.push(sql`${drafts.createdAt} >= ${createdAfter}`);
   }
   if (createdBefore) {
-    conditions.push(sql`${drafts.createdAt} <= ${createdBefore}`);
+    scopedConditions.push(sql`${drafts.createdAt} <= ${createdBefore}`);
+  }
+  if (updatedAfter) {
+    scopedConditions.push(sql`${drafts.updatedAt} >= ${updatedAfter}`);
+  }
+  if (updatedBefore) {
+    scopedConditions.push(sql`${drafts.updatedAt} <= ${updatedBefore}`);
   }
 
-  // Build order by
+  allConditions.push(...scopedConditions);
+  if (isCompleteFilter !== undefined) {
+    allConditions.push(eq(drafts.isComplete, isCompleteFilter));
+  }
+  if (phaseFilter) {
+    allConditions.push(sql`${draftPhaseExpr} = ${phaseFilter}`);
+  }
+
   const orderColumn =
     sortBy === "createdAt"
       ? drafts.createdAt
@@ -109,86 +237,138 @@ export async function findDrafts({
         ? drafts.updatedAt
         : sortBy === "type"
           ? drafts.type
-          : drafts.isComplete;
+          : sortBy === "mode"
+            ? draftModeExpr
+            : sortBy === "phase"
+              ? draftPhaseExpr
+              : sortBy === "progress"
+                ? progressPercentExpr
+                : sortBy === "players"
+                  ? playersCountExpr
+                  : drafts.isComplete;
 
   const orderFn = sortOrder === "asc" ? sql`${orderColumn} ASC` : desc(orderColumn);
-
-  // Build queries
   let query = db.select().from(drafts);
-  if (conditions.length > 0) {
-    query = query.where(sql`${sql.join(conditions, sql` AND `)}`) as typeof query;
+  if (allConditions.length > 0) {
+    query = query.where(sql`${sql.join(allConditions, sql` AND `)}`) as typeof query;
   }
 
-  // Build WHERE clause for stats (without isCompleteFilter)
-  const statsConditions = [];
-  if (typeFilter) {
-    statsConditions.push(eq(drafts.type, typeFilter));
-  }
-  if (createdAfter) {
-    statsConditions.push(sql`${drafts.createdAt} >= ${createdAfter}`);
-  }
-  if (createdBefore) {
-    statsConditions.push(sql`${drafts.createdAt} <= ${createdBefore}`);
-  }
-
-  const statsWhere =
-    statsConditions.length > 0
-      ? sql`${sql.join(statsConditions, sql` AND `)}`
+  const resultsWhere =
+    allConditions.length > 0
+      ? sql`${sql.join(allConditions, sql` AND `)}`
+      : sql`1=1`;
+  const scopeWhere =
+    scopedConditions.length > 0
+      ? sql`${sql.join(scopedConditions, sql` AND `)}`
       : sql`1=1`;
 
-  const [draftsData, filteredCount, statsTotal, completedCount, typeStats] =
-    await Promise.all([
-      query.orderBy(orderFn).limit(pageSize).offset(offset),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(drafts)
-        .where(
-          conditions.length > 0
-            ? sql`${sql.join(conditions, sql` AND `)}`
-            : sql`1=1`,
-        ),
-      db.select({ count: sql<number>`count(*)` }).from(drafts).where(statsWhere),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(drafts)
-        .where(sql`${statsWhere} AND ${drafts.isComplete} = 1`),
-      db
-        .select({
-          type: drafts.type,
-          count: sql<number>`count(*)`,
-        })
-        .from(drafts)
-        .where(statsWhere)
-        .groupBy(drafts.type),
-    ]);
+  const [
+    draftsData,
+    filteredCount,
+    scopedCount,
+    allCount,
+    completedCount,
+    typeStats,
+    modeStats,
+    phaseStats,
+  ] = await Promise.all([
+    query.orderBy(orderFn).limit(pageSize).offset(offset),
+    db.select({ count: sql<number>`count(*)` }).from(drafts).where(resultsWhere),
+    db.select({ count: sql<number>`count(*)` }).from(drafts).where(scopeWhere),
+    db.select({ count: sql<number>`count(*)` }).from(drafts),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(drafts)
+      .where(sql`${scopeWhere} AND ${drafts.isComplete} = 1`),
+    db
+      .select({
+        type: drafts.type,
+        count: sql<number>`count(*)`,
+      })
+      .from(drafts)
+      .where(scopeWhere)
+      .groupBy(drafts.type),
+    db
+      .select({
+        mode: draftModeExpr,
+        count: sql<number>`count(*)`,
+      })
+      .from(drafts)
+      .where(scopeWhere)
+      .groupBy(draftModeExpr),
+    db
+      .select({
+        phase: draftPhaseExpr,
+        count: sql<number>`count(*)`,
+      })
+      .from(drafts)
+      .where(scopeWhere)
+      .groupBy(draftPhaseExpr),
+  ]);
 
   const data = draftsData.map((draft) => ({
-    ...draft,
-    data: JSON.parse(draft.data as string) as Draft,
+    ...(() => {
+      const parsedDraft = JSON.parse(draft.data as string) as Draft;
+      const selectionsCount = parsedDraft.selections?.length ?? 0;
+      const pickOrderCount = parsedDraft.pickOrder?.length ?? 0;
+      const isComplete = !!draft.isComplete;
+      const mode = deriveDraftMode(parsedDraft);
+      const phase = deriveDraftPhase(parsedDraft, isComplete);
+
+      return {
+        ...draft,
+        data: parsedDraft,
+        mode,
+        phase,
+        selectionsCount,
+        pickOrderCount,
+        progressPercent:
+          pickOrderCount > 0 ? (100 * selectionsCount) / pickOrderCount : 0,
+        playerCount: parsedDraft.players?.length ?? 0,
+        playerNames: parsedDraft.players?.map((p) => p.name).join(", ") ?? "",
+      };
+    })(),
   }));
 
   const totalPages = Math.ceil(filteredCount[0].count / pageSize);
-  const totalDrafts = statsTotal[0].count;
+  const scopedDrafts = scopedCount[0].count;
+  const allDrafts = allCount[0].count;
+  const filteredDrafts = filteredCount[0].count;
   const completedDrafts = completedCount[0].count;
 
   const draftsByType: Record<string, number> = {};
   typeStats.forEach((stat) => {
-    if (stat.type) {
-      const normalizedType = normalizeDraftType(stat.type);
-      draftsByType[normalizedType] = (draftsByType[normalizedType] || 0) + stat.count;
-    }
+    const normalizedType = normalizeDraftType(stat.type);
+    draftsByType[normalizedType] = (draftsByType[normalizedType] || 0) + stat.count;
+  });
+
+  const draftsByMode: Record<string, number> = {};
+  modeStats.forEach((stat) => {
+    const mode = stat.mode || "base";
+    draftsByMode[mode] = (draftsByMode[mode] || 0) + stat.count;
+  });
+
+  const draftsByPhase: Record<string, number> = {};
+  phaseStats.forEach((stat) => {
+    const phase = stat.phase || "standardPick";
+    draftsByPhase[phase] = (draftsByPhase[phase] || 0) + stat.count;
   });
 
   return {
     drafts: data,
     totalPages,
     currentPage: page,
+    filteredTotal: filteredDrafts,
     stats: {
-      totalDrafts,
+      allDrafts,
+      scopedDrafts,
+      filteredDrafts,
       completedDrafts,
       completionPercent:
-        totalDrafts > 0 ? (completedDrafts / totalDrafts) * 100 : 0,
+        scopedDrafts > 0 ? (completedDrafts / scopedDrafts) * 100 : 0,
       draftsByType,
+      draftsByMode,
+      draftsByPhase,
     },
   };
 }
@@ -252,7 +432,10 @@ async function getPrettyUrl(presetUrl?: string): Promise<string> {
 }
 
 export async function updateDraftUrl(id: string, urlName: string) {
-  db.update(drafts).set({ urlName }).where(eq(drafts.id, id)).run();
+  db.update(drafts)
+    .set({ urlName, updatedAt: sql`CURRENT_TIMESTAMP` })
+    .where(eq(drafts.id, id))
+    .run();
 }
 
 export async function updateDraft(id: string, draftData: Draft) {
@@ -269,6 +452,7 @@ export async function updateDraft(id: string, draftData: Draft) {
       data: JSON.stringify(stripEphemeralDraftFields(draftData)),
       type,
       isComplete: newIsComplete,
+      updatedAt: sql`CURRENT_TIMESTAMP`,
     })
     .where(eq(drafts.id, id))
     .run();

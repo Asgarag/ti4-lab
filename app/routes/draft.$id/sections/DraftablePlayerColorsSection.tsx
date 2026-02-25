@@ -28,7 +28,9 @@ export function DraftablePlayerColorsSection() {
 
   const { syncDraft } = useSyncDraft();
   const canSelect =
-    currentlyPicking && activePlayer?.factionColor === undefined;
+    currentlyPicking &&
+    !!activePlayer &&
+    activePlayer.factionColor === undefined;
 
   if (!draftPlayerColors) return null;
   return (

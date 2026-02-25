@@ -19,6 +19,7 @@ import {
   addDiscordPickMessage,
   deleteDiscordPickMessage,
 } from "~/drizzle/discordMessages.server";
+import { Player } from "~/types";
 
 const commands = [startDraft];
 
@@ -126,6 +127,32 @@ async function sendTrackedMessage(
   await addDiscordPickMessage(draftId, messageType, sentMessage.id);
 }
 
+function resolveSelectionPlayer(
+  players: Player[],
+  selection: Draft["selections"][number] | undefined,
+  pickOrderEntry: Draft["pickOrder"][number] | undefined,
+): Player | undefined {
+  if (!selection) return undefined;
+
+  if ("playerId" in selection) {
+    return players.find((player) => player.id === selection.playerId);
+  }
+
+  if (typeof pickOrderEntry === "number") {
+    return players[pickOrderEntry];
+  }
+
+  return undefined;
+}
+
+function getPlayerMentionOrFallback(
+  player: Player | undefined,
+  draft: Draft,
+): string {
+  if (!player) return "A player";
+  return getDiscordMention(player, draft.integrations.discord!);
+}
+
 async function announceLastPick(
   draftId: string,
   draft: Draft,
@@ -133,12 +160,23 @@ async function announceLastPick(
 ): Promise<void> {
   if (draft.selections.length === 0) return;
 
-  const { players, pickOrder, selections, integrations } = draft;
-  const previousPlayer = players[pickOrder[selections.length - 1]];
-  const previousPlayerName = getDiscordMention(previousPlayer, integrations.discord!);
+  const { players, pickOrder, selections } = draft;
   const previousPick = selections[selections.length - 1];
+  const previousPickIdx = selections.length - 1;
+  const previousPickOrder = pickOrder[previousPickIdx];
 
-  const pickMessage = draftSelectionToMessage(previousPlayerName, previousPick, draft);
+  const previousPlayer = resolveSelectionPlayer(
+    players,
+    previousPick,
+    previousPickOrder,
+  );
+  const previousPlayerName = getPlayerMentionOrFallback(previousPlayer, draft);
+
+  const pickMessage = draftSelectionToMessage(
+    previousPlayerName,
+    previousPick,
+    draft,
+  );
   await sendTrackedMessage(draftId, MESSAGE_TYPE.LAST_PICK, channel, pickMessage);
 }
 
@@ -149,7 +187,10 @@ async function notifyNextPlayer(
   channel: TextChannel,
 ): Promise<void> {
   const { players, pickOrder, selections, integrations } = draft;
-  const currentPlayer = players[pickOrder[selections.length]];
+  const currentPick = pickOrder[selections.length];
+  if (typeof currentPick !== "number") return;
+
+  const currentPlayer = players[currentPick];
   const mention = getDiscordMention(currentPlayer, integrations.discord!);
   const draftLink = `[Draft link](${global.env.baseUrl}/draft/${draftUrl})`;
 

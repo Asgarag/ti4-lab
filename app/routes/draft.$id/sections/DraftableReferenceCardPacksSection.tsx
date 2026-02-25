@@ -18,7 +18,9 @@ export function DraftableReferenceCardPacksSection() {
 
   const { syncDraft } = useSyncDraft();
   const canSelect =
-    currentlyPicking && activePlayer?.referenceCardPackIdx === undefined;
+    currentlyPicking &&
+    !!activePlayer &&
+    activePlayer.referenceCardPackIdx === undefined;
 
   if (
     draftGameMode !== "twilightsFall" ||

@@ -11,7 +11,14 @@ import {
 import { createDraft } from "~/drizzle/draft.server";
 import { createMultiDraft } from "~/drizzle/multiDraft.server";
 import { shuffle } from "~/draft/helpers/randomization";
-import { DiscordData, Draft, DraftSettings, FactionId, Player } from "~/types";
+import {
+  DiscordData,
+  Draft,
+  DraftSettings,
+  FactionId,
+  Player,
+  TexasDraftState,
+} from "~/types";
 import { createDraftOrder } from "~/utils/draftOrder.server";
 
 import { getFactionPool } from "~/utils/factions";
@@ -63,7 +70,7 @@ export async function action({ request }: ActionFunctionArgs) {
     if (!slices) return;
     const presetMap = initializeMap(settings, slices, systemPool);
 
-    let texasDraft = undefined;
+    let texasDraft: TexasDraftState | undefined = undefined;
     if (settings.draftGameMode === "texasStyle") {
       texasDraft = {
         ...createTexasSeatAssignments(players),

@@ -1,0 +1,491 @@
+/* ═══════════════════════════════════════════════
+   Admin Drafts — Industrial Sci-Fi Aesthetic
+   ═══════════════════════════════════════════════ */
+
+.page {
+  padding: var(--mantine-spacing-xl) 0;
+}
+
+/* Subtle grid background overlay */
+.page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(59, 130, 246, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.page > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Header ── */
+.header {
+  margin-bottom: var(--mantine-spacing-xl);
+  padding-bottom: var(--mantine-spacing-md);
+  border-bottom: 1px solid var(--mantine-color-dark-5);
+}
+
+.title {
+  font-family: "Orbitron", sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  letter-spacing: 0.03em;
+  color: var(--mantine-color-gray-1);
+  margin: 0;
+}
+
+/* ── Stats strip ── */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--mantine-spacing-sm);
+  margin-bottom: var(--mantine-spacing-lg);
+}
+
+@media (max-width: 900px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.statPanel {
+  position: relative;
+  background: var(--mantine-color-dark-7);
+  border: 1px solid var(--mantine-color-dark-4);
+  border-radius: 4px;
+  padding: 14px 16px;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.statPanel:hover {
+  border-color: var(--mantine-color-dark-3);
+}
+
+/* Corner brackets — HUD detail */
+.statPanel::before,
+.statPanel::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-color: var(--mantine-color-cyan-7);
+  border-style: solid;
+  opacity: 0.4;
+}
+
+.statPanel::before {
+  top: 4px;
+  left: 4px;
+  border-width: 1px 0 0 1px;
+}
+
+.statPanel::after {
+  bottom: 4px;
+  right: 4px;
+  border-width: 0 1px 1px 0;
+}
+
+/* Accent bar at bottom of stat panel */
+.statBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--mantine-color-cyan-7),
+    transparent
+  );
+  opacity: 0.35;
+}
+
+.statLabel {
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.55rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.statValue {
+  font-family: "Orbitron", sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+/* ── Panel (used for filters + data) ── */
+.panel {
+  background: var(--mantine-color-dark-7);
+  border: 1px solid var(--mantine-color-dark-4);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: var(--mantine-spacing-lg);
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--mantine-color-dark-8);
+  border-bottom: 1px solid var(--mantine-color-dark-5);
+}
+
+.panelTitle {
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mantine-color-dark-1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panelTitleIcon {
+  color: var(--mantine-color-cyan-6);
+  opacity: 0.7;
+}
+
+.panelBody {
+  padding: 16px;
+}
+
+/* ── Quick filter buttons ── */
+.quickFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-bottom: var(--mantine-spacing-md);
+  margin-bottom: var(--mantine-spacing-md);
+  border-bottom: 1px solid var(--mantine-color-dark-5);
+}
+
+.quickFilter {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 2px;
+  border: 1px solid var(--mantine-color-dark-4);
+  background: var(--mantine-color-dark-8);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: var(--mantine-color-gray-4);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.quickFilter:hover {
+  border-color: var(--mantine-color-cyan-7);
+  color: var(--mantine-color-cyan-4);
+  background: color-mix(in srgb, var(--mantine-color-cyan-9) 10%, var(--mantine-color-dark-8));
+}
+
+/* ── Filter grid ── */
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--mantine-spacing-sm);
+}
+
+.dateFilters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--mantine-spacing-sm);
+  margin-top: var(--mantine-spacing-sm);
+  padding-top: var(--mantine-spacing-sm);
+  border-top: 1px solid var(--mantine-color-dark-5);
+}
+
+/* ── Data table overrides ── */
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.8rem;
+}
+
+.table th {
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mantine-color-dark-1);
+  padding: 10px 12px;
+  background: var(--mantine-color-dark-8);
+  border-bottom: 1px solid var(--mantine-color-dark-4);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.sortable {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.sortable:hover {
+  color: var(--mantine-color-cyan-4);
+}
+
+.activeSort {
+  color: var(--mantine-color-cyan-4);
+}
+
+.sortIcon {
+  display: inline-flex;
+  margin-left: 4px;
+  font-size: 0.55rem;
+  vertical-align: middle;
+}
+
+.table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--mantine-color-dark-6);
+  color: var(--mantine-color-gray-3);
+  vertical-align: middle;
+}
+
+.table tbody tr {
+  transition: background 0.1s ease;
+}
+
+.table tbody tr:hover {
+  background: color-mix(in srgb, var(--mantine-color-cyan-9) 5%, transparent);
+}
+
+/* ── Mode badges — color-coded ── */
+.modeBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 2px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.modeBadge[data-mode="base"] {
+  background: color-mix(in srgb, var(--mantine-color-blue-7) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mantine-color-blue-7) 40%, transparent);
+  color: var(--mantine-color-blue-4);
+}
+
+.modeBadge[data-mode="twilightsFall"] {
+  background: color-mix(in srgb, var(--mantine-color-violet-7) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mantine-color-violet-7) 40%, transparent);
+  color: var(--mantine-color-violet-4);
+}
+
+.modeBadge[data-mode="texasStyle"] {
+  background: color-mix(in srgb, var(--mantine-color-orange-7) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mantine-color-orange-7) 40%, transparent);
+  color: var(--mantine-color-orange-4);
+}
+
+.modeBadge[data-mode="presetMap"] {
+  background: color-mix(in srgb, var(--mantine-color-teal-7) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mantine-color-teal-7) 40%, transparent);
+  color: var(--mantine-color-teal-4);
+}
+
+/* ── Status badge with glow dot ── */
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 2px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.statusBadge[data-status="complete"] {
+  background: color-mix(in srgb, var(--mantine-color-teal-7) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mantine-color-teal-7) 40%, transparent);
+  color: var(--mantine-color-teal-4);
+}
+
+.statusBadge[data-status="active"] {
+  background: color-mix(in srgb, var(--mantine-color-yellow-7) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mantine-color-yellow-7) 35%, transparent);
+  color: var(--mantine-color-yellow-4);
+}
+
+.statusDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+
+.statusDot[data-status="complete"] {
+  background: var(--mantine-color-teal-5);
+  box-shadow: 0 0 4px var(--mantine-color-teal-5);
+}
+
+.statusDot[data-status="active"] {
+  background: var(--mantine-color-yellow-5);
+  box-shadow: 0 0 4px var(--mantine-color-yellow-5);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── Progress gauge ── */
+.progressWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 100px;
+}
+
+.progressTrack {
+  height: 4px;
+  background: var(--mantine-color-dark-5);
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.progressFill[data-level="low"] {
+  background: var(--mantine-color-red-6);
+  box-shadow: 0 0 6px var(--mantine-color-red-8);
+}
+
+.progressFill[data-level="mid"] {
+  background: var(--mantine-color-yellow-5);
+  box-shadow: 0 0 6px var(--mantine-color-yellow-8);
+}
+
+.progressFill[data-level="high"] {
+  background: var(--mantine-color-cyan-5);
+  box-shadow: 0 0 6px var(--mantine-color-cyan-8);
+}
+
+.progressFill[data-level="complete"] {
+  background: var(--mantine-color-teal-5);
+  box-shadow: 0 0 6px var(--mantine-color-teal-8);
+}
+
+/* ── Empty state ── */
+.emptyState {
+  padding: 48px 24px;
+  text-align: center;
+}
+
+/* ── Pagination bar ── */
+.paginationBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--mantine-color-dark-8);
+  border-top: 1px solid var(--mantine-color-dark-5);
+}
+
+.paginationPage {
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: var(--mantine-color-dark-1);
+}
+
+/* Chevron nav buttons (matches map-presets pattern) */
+.chevronButton {
+  all: unset;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+  border: 1px solid var(--mantine-color-dark-4);
+  background: var(--mantine-color-dark-7);
+  color: var(--mantine-color-gray-3);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chevronButton:hover:not(:disabled) {
+  background: var(--mantine-color-dark-5);
+  border-color: var(--mantine-color-blue-7);
+  color: var(--mantine-color-blue-4);
+}
+
+.chevronButton:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+/* ── Filter toggle ── */
+.filterToggle {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.55rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mantine-color-dark-2);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.filterToggle:hover {
+  color: var(--mantine-color-cyan-4);
+}
+
+.filterToggleIcon {
+  transition: transform 0.2s ease;
+}
+
+.filterToggleIcon[data-open="true"] {
+  transform: rotate(180deg);
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .paginationBar {
+    flex-direction: column;
+    gap: var(--mantine-spacing-sm);
+    align-items: stretch;
+    text-align: center;
+  }
+}

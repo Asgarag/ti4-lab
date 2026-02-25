@@ -22,28 +22,53 @@ export function getDraftSummaryMessage(draft: Draft): string {
   );
 
   const currentPick = draft.selections.length;
-  const activePlayerId = draft.pickOrder[currentPick];
-  const nextPlayerId = draft.pickOrder[currentPick + 1];
+  const activePlayerId = getPlayerIdFromPick(draft.pickOrder[currentPick]);
+  const nextPlayerId = getPlayerIdFromPick(draft.pickOrder[currentPick + 1]);
 
-  const lines = hydratedPlayers.map((p) => {
-    const factionEmoji = getFactionEmoji(p);
-    const sliceEmoji = getSliceEmoji(p, draft);
-    const positionEmoji = getPositionEmoji(p);
-    const playerName = formatPlayerName(p, activePlayerId, nextPlayerId);
+  const linesByPlayerId = hydratedPlayers.reduce(
+    (acc, player) => {
+      acc[player.id] = buildPlayerLine(
+        player,
+        draft,
+        activePlayerId,
+        nextPlayerId,
+      );
+      return acc;
+    },
+    {} as Record<number, string>,
+  );
 
-    return [
-      `> ${draft.pickOrder.indexOf(p.id) + 1}.`,
-      factionEmoji,
-      sliceEmoji,
-      positionEmoji,
-      playerName,
-    ].join(" ");
-  });
-
-  const draftOrder = draft.pickOrder.slice(0, draft.players.length);
-  const orderedLines = draftOrder.map((id) => lines[id]);
+  const orderedLines = draft.pickOrder
+    .slice(0, draft.players.length)
+    .filter((pick): pick is number => typeof pick === "number")
+    .map((playerId) => linesByPlayerId[playerId])
+    .filter(Boolean);
 
   return ["# **__Draft Picks So Far__**:", ...orderedLines].join("\n");
+}
+
+function getPlayerIdFromPick(pick: Draft["pickOrder"][number] | undefined) {
+  return typeof pick === "number" ? pick : undefined;
+}
+
+function buildPlayerLine(
+  player: HydratedPlayer,
+  draft: Draft,
+  activePlayerId: number | undefined,
+  nextPlayerId: number | undefined,
+): string {
+  const factionEmoji = getFactionEmoji(player);
+  const sliceEmoji = getSliceEmoji(player, draft);
+  const positionEmoji = getPositionEmoji(player);
+  const playerName = formatPlayerName(player, activePlayerId, nextPlayerId);
+
+  return [
+    `> ${draft.pickOrder.indexOf(player.id) + 1}.`,
+    factionEmoji,
+    sliceEmoji,
+    positionEmoji,
+    playerName,
+  ].join(" ");
 }
 
 function getFactionEmoji(player: HydratedPlayer): string {
@@ -71,8 +96,8 @@ function getPositionEmoji(player: HydratedPlayer): string {
 
 function formatPlayerName(
   player: HydratedPlayer,
-  activePlayerId: number,
-  nextPlayerId: number,
+  activePlayerId: number | undefined,
+  nextPlayerId: number | undefined,
 ): string {
   let name = player.name;
 

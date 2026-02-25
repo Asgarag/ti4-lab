@@ -44,17 +44,12 @@ import {
   dealTexasTiles,
 } from "./draft/texas/texasDraft";
 
-// Define SelectionType type based on the selection types used in the code
-type SelectionType =
-  | "SELECT_SLICE"
-  | "SELECT_SPEAKER_ORDER"
-  | "SELECT_FACTION"
-  | "SELECT_MINOR_FACTION"
-  | "SELECT_REFERENCE_CARD"
-  | "SELECT_REFERENCE_CARD_PACK"
-  | "SELECT_PLAYER_COLOR"
-  | "SELECT_SEAT"
-  | "BAN_FACTION";
+type SelectionType = Extract<DraftSelection, { playerId: PlayerId }>["type"];
+type PlayerSelection = Extract<DraftSelection, { playerId: PlayerId }>;
+
+function hasPlayerId(selection: DraftSelection): selection is PlayerSelection {
+  return "playerId" in selection;
+}
 
 /// V2
 type DraftV2State = {
@@ -94,10 +89,6 @@ type DraftV2State = {
     selectSlice: (playerId: number, sliceIdx: number) => void;
     selectFaction: (playerId: number, factionId: FactionId) => void;
     selectMinorFaction: (playerId: number, minorFactionId: FactionId) => void;
-    selectReferenceCard: (
-      playerId: number,
-      referenceFactionId: FactionId,
-    ) => void;
     selectReferenceCardPack: (playerId: number, packIdx: number) => void;
     stageSimultaneousPick: (
       phase: SimultaneousPickType,
@@ -243,7 +234,7 @@ const makeSelection = (
   >,
 ) => {
   const alreadySelected = state.draft.selections.find(
-    (s) => s.playerId === playerId && s.type === type,
+    (s) => hasPlayerId(s) && s.playerId === playerId && s.type === type,
   );
   if (alreadySelected) return;
 
@@ -405,13 +396,6 @@ export const draftStore = createStore<DraftV2State>()(
         set((state) => {
           makeSelection(state, "SELECT_MINOR_FACTION", playerId, {
             minorFactionId,
-          });
-        }),
-
-      selectReferenceCard: (playerId: number, referenceFactionId: FactionId) =>
-        set((state) => {
-          makeSelection(state, "SELECT_REFERENCE_CARD", playerId, {
-            referenceFactionId,
           });
         }),
 

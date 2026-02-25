@@ -36,9 +36,12 @@ function PoolFactionSelection() {
     useHydratedDraft();
 
   const { syncDraft } = useSyncDraft();
-  const canSelect = currentlyPicking && activePlayer?.faction === undefined;
+  const canSelect =
+    currentlyPicking && !!activePlayer && activePlayer.faction === undefined;
   const canSelectMinor =
-    currentlyPicking && activePlayer?.minorFaction === undefined;
+    currentlyPicking &&
+    !!activePlayer &&
+    activePlayer.minorFaction === undefined;
 
   return (
     <SimpleGrid cols={{ base: 2, sm: 3, md: 4, lg: 3, xl: 4 }}>
@@ -99,7 +102,8 @@ function GroupedFactionSelection({
     useHydratedDraft();
   const { selectFaction } = useDraft((state) => state.draftActions);
   const { syncDraft } = useSyncDraft();
-  const canSelect = currentlyPicking && activePlayer?.faction === undefined;
+  const canSelect =
+    currentlyPicking && !!activePlayer && activePlayer.faction === undefined;
 
   return Object.entries(playerFactionPools).map(([playerId, factions]) => {
     const player = hydratedPlayers.find((p) => p.id === Number(playerId))!;

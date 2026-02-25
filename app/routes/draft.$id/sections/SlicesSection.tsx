@@ -25,7 +25,8 @@ export function SlicesSection() {
     clearSlice,
   } = useDraft((state) => state.actions);
 
-  const canSelect = currentlyPicking && activePlayer?.sliceIdx === undefined;
+  const canSelectSlice =
+    currentlyPicking && !!activePlayer && activePlayer.sliceIdx === undefined;
 
   const isTwilightsFallFullWidth =
     draftGameMode === "twilightsFall" && !nucleusStyle;
@@ -53,7 +54,7 @@ export function SlicesSection() {
             player={hydratedPlayers.find((p) => p.sliceIdx === idx)}
             modifiable={adminMode}
             onSelect={
-              canSelect
+              canSelectSlice
                 ? () => {
                     if (confirm(`Selecting ${slice.name}`)) {
                       selectSlice(activePlayer.id, idx);

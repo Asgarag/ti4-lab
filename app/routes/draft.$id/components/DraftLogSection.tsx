@@ -2,6 +2,12 @@ import { Box, Stack, Text } from "@mantine/core";
 import { SectionTitle } from "~/components/Section";
 import { useDraft } from "~/draftStore";
 import { draftSelectionToMessage } from "~/utils/selections";
+import { DraftSelection } from "~/types";
+
+function getSelectionPlayerName(selection: DraftSelection, players: { id: number; name: string }[]) {
+  if (!("playerId" in selection)) return "";
+  return players.find((p) => p.id === selection.playerId)?.name ?? "";
+}
 
 export function DraftLogSection() {
   const draftStore = useDraft();
@@ -25,7 +31,7 @@ export function DraftLogSection() {
           {selections.map((selection) => (
             <Text size="sm">
               {draftSelectionToMessage(
-                players.find((p) => p.id === selection.playerId)?.name ?? "",
+                getSelectionPlayerName(selection, players),
                 selection,
                 draft,
               )}

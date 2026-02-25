@@ -22,7 +22,9 @@ export function SpeakerOrderSection() {
   const { selectSpeakerOrder } = useDraft((state) => state.draftActions);
   const { syncDraft } = useSyncDraft();
   const canSelect =
-    currentlyPicking && activePlayer?.speakerOrder === undefined;
+    currentlyPicking &&
+    !!activePlayer &&
+    activePlayer.speakerOrder === undefined;
 
   return (
     <Section>
@@ -38,6 +40,7 @@ export function SpeakerOrderSection() {
               speakerOrder={so}
               player={player}
               onSelect={() => {
+                if (!activePlayer || !canSelect) return;
                 if (confirm(`Selecting speaker order position ${so}`)) {
                   selectSpeakerOrder(activePlayer.id, idx);
                   syncDraft();

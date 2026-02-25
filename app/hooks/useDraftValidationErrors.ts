@@ -16,7 +16,7 @@ export function useDraftValidationErrors() {
   const draftGameMode = useDraft((state) => state.draft.settings.draftGameMode);
 
   return useMemo(() => {
-    const errors = [];
+    const errors: string[] = [];
     if (draftGameMode === "texasStyle" || draftGameMode === "presetMap") {
       return errors;
     }

@@ -1718,6 +1718,62 @@ export const rawSystems: Record<string, RawSystem> = {
     wormholes: ["EPSILON"],
     anomalies: [],
   },
+  119: {
+    id: "119",
+    planets: [],
+    type: "HYPERLANE",
+    hyperlanes: [[4, 5]],
+    wormholes: [],
+    anomalies: [],
+  },
+  120: {
+    id: "120",
+    planets: [],
+    type: "HYPERLANE",
+    hyperlanes: [[1, 2]],
+    wormholes: [],
+    anomalies: [],
+  },
+  121: {
+    id: "121",
+    planets: [],
+    type: "HYPERLANE",
+    hyperlanes: [[1, 5]],
+    wormholes: [],
+    anomalies: [],
+  },
+  122: {
+    id: "122",
+    planets: [],
+    type: "HYPERLANE",
+    hyperlanes: [[1, 5]],
+    wormholes: [],
+    anomalies: [],
+  },
+  123: {
+    id: "123",
+    planets: [],
+    type: "HYPERLANE",
+    hyperlanes: [
+      [0, 2],
+      [2, 4],
+      [2, 5],
+    ],
+    wormholes: [],
+    anomalies: [],
+  },
+  124: {
+    id: "124",
+    planets: [],
+    type: "HYPERLANE",
+    hyperlanes: [
+      [0, 4],
+      [1, 4],
+      [2, 4],
+    ],
+    wormholes: [],
+    anomalies: [],
+  },
 
   // Discordant Stars
   4200: {

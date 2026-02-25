@@ -14,7 +14,9 @@ export function DraftableMinorFactionsSection() {
 
   const { syncDraft } = useSyncDraft();
   const canSelect =
-    currentlyPicking && activePlayer?.minorFaction === undefined;
+    currentlyPicking &&
+    !!activePlayer &&
+    activePlayer.minorFaction === undefined;
 
   if (!factions) return null;
   return (

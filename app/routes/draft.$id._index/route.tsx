@@ -104,20 +104,20 @@ export default function RunningDraft() {
 
   if (!draftStore.hydrated) return <LoadingOverlay />;
 
+  const syncDraftContextValue = {
+    syncDraft,
+    syncing,
+    stagePriorityValue,
+    stageHomeSystem,
+    stageSimultaneousPick,
+    undoStagedPick,
+    undoSimultaneousPhase,
+    undoLastPick,
+  };
+
   if (draftFinished) {
     return (
-      <SyncDraftContext.Provider
-        value={{
-          syncDraft,
-          syncing,
-          stagePriorityValue,
-          stageHomeSystem,
-          stageSimultaneousPick,
-          undoStagedPick,
-          undoSimultaneousPhase,
-          undoLastPick,
-        }}
-      >
+      <SyncDraftContext.Provider value={syncDraftContextValue}>
         <FinalizedDraft />
       </SyncDraftContext.Provider>
     );
@@ -150,18 +150,7 @@ export default function RunningDraft() {
 
   if (isInBanPhase()) {
     return (
-      <SyncDraftContext.Provider
-        value={{
-          syncDraft,
-          syncing,
-          stagePriorityValue,
-          stageHomeSystem,
-          stageSimultaneousPick,
-          undoStagedPick,
-          undoSimultaneousPhase,
-          undoLastPick,
-        }}
-      >
+      <SyncDraftContext.Provider value={syncDraftContextValue}>
         <BanPhase />
       </SyncDraftContext.Provider>
     );
@@ -171,18 +160,7 @@ export default function RunningDraft() {
   if (typeof currentPick === "object" && currentPick?.kind === "simultaneous") {
     if (currentPick.phase === "priorityValue") {
       return (
-        <SyncDraftContext.Provider
-          value={{
-            syncDraft,
-            syncing,
-            stagePriorityValue,
-            stageHomeSystem,
-            stageSimultaneousPick,
-            undoStagedPick,
-            undoSimultaneousPhase,
-            undoLastPick,
-          }}
-        >
+        <SyncDraftContext.Provider value={syncDraftContextValue}>
           <PriorityValueSelectionPhase />
         </SyncDraftContext.Provider>
       );
@@ -190,18 +168,7 @@ export default function RunningDraft() {
 
     if (currentPick.phase === "homeSystem") {
       return (
-        <SyncDraftContext.Provider
-          value={{
-            syncDraft,
-            syncing,
-            stagePriorityValue,
-            stageHomeSystem,
-            stageSimultaneousPick,
-            undoStagedPick,
-            undoSimultaneousPhase,
-            undoLastPick,
-          }}
-        >
+        <SyncDraftContext.Provider value={syncDraftContextValue}>
           <HomeSystemSelectionPhase />
         </SyncDraftContext.Provider>
       );
@@ -209,18 +176,7 @@ export default function RunningDraft() {
 
     if (currentPick.phase === "texasFaction") {
       return (
-        <SyncDraftContext.Provider
-          value={{
-            syncDraft,
-            syncing,
-            stagePriorityValue,
-            stageHomeSystem,
-            stageSimultaneousPick,
-            undoStagedPick,
-            undoSimultaneousPhase,
-            undoLastPick,
-          }}
-        >
+        <SyncDraftContext.Provider value={syncDraftContextValue}>
           <TexasFactionSelectionPhase />
         </SyncDraftContext.Provider>
       );
@@ -228,18 +184,7 @@ export default function RunningDraft() {
 
     if (currentPick.phase === "texasBlueKeep1") {
       return (
-        <SyncDraftContext.Provider
-          value={{
-            syncDraft,
-            syncing,
-            stagePriorityValue,
-            stageHomeSystem,
-            stageSimultaneousPick,
-            undoStagedPick,
-            undoSimultaneousPhase,
-            undoLastPick,
-          }}
-        >
+        <SyncDraftContext.Provider value={syncDraftContextValue}>
           <TexasTileDraftPhase
             phase="texasBlueKeep1"
             title="Blue Tile Draft — Round 1"
@@ -252,18 +197,7 @@ export default function RunningDraft() {
 
     if (currentPick.phase === "texasBlueKeep2") {
       return (
-        <SyncDraftContext.Provider
-          value={{
-            syncDraft,
-            syncing,
-            stagePriorityValue,
-            stageHomeSystem,
-            stageSimultaneousPick,
-            undoStagedPick,
-            undoSimultaneousPhase,
-            undoLastPick,
-          }}
-        >
+        <SyncDraftContext.Provider value={syncDraftContextValue}>
           <TexasTileDraftPhase
             phase="texasBlueKeep2"
             title="Blue Tile Draft — Round 2"
@@ -276,18 +210,7 @@ export default function RunningDraft() {
 
     if (currentPick.phase === "texasRedKeep") {
       return (
-        <SyncDraftContext.Provider
-          value={{
-            syncDraft,
-            syncing,
-            stagePriorityValue,
-            stageHomeSystem,
-            stageSimultaneousPick,
-            undoStagedPick,
-            undoSimultaneousPhase,
-            undoLastPick,
-          }}
-        >
+        <SyncDraftContext.Provider value={syncDraftContextValue}>
           <TexasTileDraftPhase
             phase="texasRedKeep"
             title="Red Tile Draft"
@@ -301,33 +224,14 @@ export default function RunningDraft() {
 
   if (settings.draftGameMode === "texasStyle") {
     return (
-      <SyncDraftContext.Provider
-        value={{
-          syncDraft,
-          syncing,
-          stagePriorityValue,
-          stageHomeSystem,
-          stageSimultaneousPick,
-          undoStagedPick,
-          undoSimultaneousPhase,
-          undoLastPick,
-        }}
-      >
+      <SyncDraftContext.Provider value={syncDraftContextValue}>
         <TexasMapBuildPhase />
       </SyncDraftContext.Provider>
     );
   }
 
   return (
-    <SyncDraftContext.Provider
-      value={{
-        syncDraft,
-        syncing,
-        stagePriorityValue,
-        stageHomeSystem,
-        undoLastPick,
-      }}
-    >
+    <SyncDraftContext.Provider value={syncDraftContextValue}>
       {socket && isDisconnected && (
         <Button
           variant="filled"
