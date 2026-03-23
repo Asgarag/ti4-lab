@@ -5,6 +5,7 @@ import { DraftableSlice } from "../components/DraftableSlice";
 import { useSyncDraft } from "~/hooks/useSyncDraft";
 import { useHydratedDraft } from "~/hooks/useHydratedDraft";
 import { useSafeOutletContext } from "~/useSafeOutletContext";
+import { useSortedSlices } from "~/routes/draft/useSortedSlices";
 
 export function SlicesSection() {
   const slices = useDraft((state) => state.draft.slices);
@@ -16,6 +17,7 @@ export function SlicesSection() {
   const { syncDraft } = useSyncDraft();
   const { activePlayer, hydratedPlayers, currentlyPicking } =
     useHydratedDraft();
+  const sortedSlices = useSortedSlices(slices, []);
 
   const {
     removeSystemFromSlice,
@@ -46,7 +48,7 @@ export function SlicesSection() {
         spacing="lg"
         style={{ alignItems: "flex-start" }}
       >
-        {slices.map((slice, idx) => (
+        {sortedSlices.map(({slice, idx}) => (
           <DraftableSlice
             key={idx}
             id={`slice-${idx}`}
