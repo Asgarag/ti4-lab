@@ -4,6 +4,7 @@ import type {
   SliceSettingsFormatType,
 } from "~/components/SliceSettingsModal";
 import type { FactionId } from "~/types";
+import { draftConfig } from "~/draft";
 
 export type SliceValueRange = {
   minSliceValue: number | undefined;
@@ -55,6 +56,7 @@ export const buildSliceGenerationConfig = (
   if (!formatType) return undefined;
 
   const settings = sliceSettings[formatType];
+  const config = draftConfig[formatType];
   const { minSliceValue, maxSliceValue } = calculateSliceValueRange(
     settings,
     hasMinorFactions,
@@ -84,6 +86,7 @@ export const buildSliceGenerationConfig = (
       supernovaOnPathPenalty: settings.supernovaOnPathPenalty,
       nebulaOnPathPenalty: settings.nebulaOnPathPenalty,
     },
+    mecatolPathSystemIndices: config.mecatolPathSystemIndices,
     hasMinorFactions,
   };
 };

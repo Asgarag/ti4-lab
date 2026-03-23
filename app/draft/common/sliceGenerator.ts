@@ -249,6 +249,31 @@ export function coreGenerateSlices({
       const t_slices = gatherSlicesFromSystems(tieredSystems);
 
       if (t_slices) {
+        let isValid = true;
+
+        // Separate anomalies
+        for (let sliceIndex = 0; sliceIndex < t_slices.length; sliceIndex++) {
+          let slice = t_slices[sliceIndex];
+          slice = separateAnomalies(slice, sliceShape);
+          t_slices[sliceIndex] = slice;
+        }
+
+        // Run any post-processing if provided
+        if (postProcessSlices) {
+          postProcessSlices(t_slices, config, mecatolPath, centerTile);
+        }
+
+        // check slices
+        for (let sliceIndex = 0; sliceIndex < t_slices.length; sliceIndex++) {
+          if (!validateSlice(t_slices[sliceIndex], config)) {
+            isValid = false;
+            break;
+          }
+        }
+        if (!isValid) {
+          continue;
+        }
+
         slices = t_slices;
         break;
       }
@@ -323,18 +348,6 @@ export function coreGenerateSlices({
 
   const slices: SystemIds[] | undefined = gatherSlices();
   if (!slices) return undefined;
-
-  // Separate anomalies
-  for (let sliceIndex = 0; sliceIndex < slices.length; sliceIndex++) {
-    let slice = slices[sliceIndex];
-    slice = separateAnomalies(slice, sliceShape);
-    slices[sliceIndex] = slice;
-  }
-
-  // Run any post-processing if provided
-  if (postProcessSlices) {
-    postProcessSlices(slices, config, mecatolPath, centerTile);
-  }
 
   return slices;
 }

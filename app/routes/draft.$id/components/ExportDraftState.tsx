@@ -10,15 +10,15 @@ import {
 import { IconCopy } from "@tabler/icons-react";
 import { useDraft } from "~/draftStore";
 
-export function ExportDraftState() {
+export function ExportDraftState({ full }: { full?: boolean }) {
   const draftState = useDraft((state) => state.draft);
   const [modalOpen, setModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const saveableState = JSON.stringify({
     ...draftState,
-    selections: [],
-    pickOrder: [],
+    selections: full ? draftState.selections : [],
+    pickOrder: full ? draftState.pickOrder : [],
   });
 
   const handleCopy = () => {
