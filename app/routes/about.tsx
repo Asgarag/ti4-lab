@@ -71,7 +71,7 @@ function About() {
               <Button
                 leftSection={<IconBrandDiscordFilled size={18} />}
                 component="a"
-                href="https://discord.gg/mVbAm4sS"
+                href="https://discord.gg/2ezSTQpAVC"
                 target="_blank"
                 variant="filled"
                 color="discordBlue"
